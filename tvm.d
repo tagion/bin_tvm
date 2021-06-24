@@ -118,12 +118,16 @@ int main(string[] args) {
     import std.stdio;
     import std.file : fread=read, exists;
     const testapp_file=args[1];
-    immutable wasm_code = cast(immutable(ubyte[]))testapp_file.fread();
+    immutable wasm_code = cast(immutable(ubyte[]))testapp_file.fread;
     WamrSymbols wasm_symbols;
-    wasm_symbols("intToStr", &intToStr, "(i*~i)i");
-    wasm_symbols("get_pow", &get_pow, "(ii)i");
-    wasm_symbols("calculate_native", &calculate_native, "(iii)i");
+    //wasm_symbols("intToStr", &intToStr, "(i*~i)i");
+    wasm_symbols.declare!intToStr; //calculate_native(); //("calculate_native", &calculate_native, "");
+    wasm_symbols.declare!get_pow;
+    wasm_symbols.declare!calculate_native; //("calculate_native", &calculate_native, "");
 
+    // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!calculate_native());
+    // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!get_pow());
+    // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!intToStr());
     uint[] global_heap;
     global_heap.length=512 * 1024;
 
