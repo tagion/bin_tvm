@@ -5,7 +5,8 @@ WOBJS:=${DFILES:.d=.wo}
 
 #WOBJS:=testapp.wo
 WOBJS:=${addprefix $(BIN)/,$(WOBJS)}
-WASM_MOD:=${addsuffix .wasm,$(MAIN)}
+#WASM_MOD:=${addsuffix .wasm,$(MAIN)}
+WASM_MOD:=${WOBJS:.wo=.wasm}
 
 WASMFLAGS+=-mtriple=wasm32-unknown-unknown-was
 WASMFLAGS+=--betterC
