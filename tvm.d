@@ -4,17 +4,21 @@ import tagion.utils.JSONCommon;
 
 /++
  Options for the network
-+/
+ +/
 struct Options {
     int x;
     mixin JSONCommon;
     mixin JSONConfig;
 }
 
+import tagion.basic.Basic : doFront;
+import std.algorithm.iteration : filter, each;
+import std.path : extension;
 import std.stdio;
 import std.math;
 import std.string : toStringz, fromStringz;
 
+import core.sys.posix.dlfcn;
 
 //#include <stdio.h>
 //#include "bh_platform.h"
@@ -22,26 +26,21 @@ import std.string : toStringz, fromStringz;
 //#include "math.h"
 
 extern(C) {
-import tagion.tvm.c.wasm_export;
-import tagion.tvm.c.wasm_runtime_common;
-
-// extern bool
-// wasm_runtime_call_indirect(wasm_exec_env_t exec_env,
-//                            uint element_indices,
-//                            uint argc, uint[] argv);
+    import tagion.tvm.c.wasm_export;
+    import tagion.tvm.c.wasm_runtime_common;
 
 // The first parameter is not exec_env because it is invoked by native funtions
-void reverse(char* str, int len) {
-    int i = 0, j = len - 1;
-    char temp;
-    while (i < j) {
-        temp = str[i];
-        str[i] = str[j];
-        str[j] = temp;
-        i++;
-        j--;
+    void reverse(char* str, int len) {
+        int i = 0, j = len - 1;
+        char temp;
+        while (i < j) {
+            temp = str[i];
+            str[i] = str[j];
+            str[j] = temp;
+            i++;
+            j--;
+        }
     }
-}
 
 // The first parameter exec_env must be defined using type wasm_exec_env_t
 // which is the calling convention for exporting native API by WAMR.
@@ -50,124 +49,151 @@ void reverse(char* str, int len) {
 // digit is the number of digits required in the output.
 // If digit is more than the number of digits in x,
 // then 0s are added at the beginning.
-int intToStr(wasm_exec_env_t exec_env, int x, char* str, int str_len, int digit) {
-    int i = 0;
+    int intToStr(wasm_exec_env_t exec_env, int x, char* str, int str_len, int digit) {
+        int i = 0;
 
-    writefln("calling into native function: %s", __FUNCTION__);
+        writefln("calling into native function: %s", __FUNCTION__);
 
-    while (x) {
-        // native is responsible for checking the str_len overflow
-        if (i >= str_len) {
-            return -1;
+        while (x) {
+            // native is responsible for checking the str_len overflow
+            if (i >= str_len) {
+                return -1;
+            }
+            str[i++] = (x % 10) + '0';
+            x = x / 10;
         }
-        str[i++] = (x % 10) + '0';
-        x = x / 10;
-    }
 
-    // If number of digits required is more, then
-    // add 0s at the beginning
-    while (i < digit) {
-        if (i >= str_len) {
-            return -1;
+        // If number of digits required is more, then
+        // add 0s at the beginning
+        while (i < digit) {
+            if (i >= str_len) {
+                return -1;
+            }
+            str[i++] = '0';
         }
-        str[i++] = '0';
+
+        reverse(str, i);
+
+        if (i >= str_len)
+            return -1;
+        str[i] = '\0';
+        return i;
     }
 
-    reverse(str, i);
-
-    if (i >= str_len)
-        return -1;
-    str[i] = '\0';
-    return i;
-}
-
-int get_pow(wasm_exec_env_t exec_env, int x, int y) {
-    writefln("calling into native function: %s\n", __FUNCTION__);
-    return cast(int)pow(x, y);
-}
-
-int
-calculate_native(wasm_exec_env_t exec_env, int n, int func1, int func2) {
-    writefln("calling into native function: %s, n=%d, func1=%d, func2=%d",
-           __FUNCTION__, n, func1, func2);
-
-    uint[] argv = [ n ];
-    if (!wasm_runtime_call_indirect(exec_env, func1, 1, argv.ptr)) {
-        writeln("call func1 failed");
-        return 0xDEAD;
+    int get_pow(wasm_exec_env_t exec_env, int x, int y) {
+        writefln("calling into native function: %s\n", __FUNCTION__);
+        return cast(int)pow(x, y);
     }
 
-    uint n1 = argv[0];
-    writefln("call func1 and return n1=%d", n1);
+    int
+        calculate_native(wasm_exec_env_t exec_env, int n, int func1, int func2) {
+        writefln("calling into native function: %s, n=%d, func1=%d, func2=%d",
+            __FUNCTION__, n, func1, func2);
 
-    if (!wasm_runtime_call_indirect(exec_env, func2, 1, argv.ptr)) {
-        writeln("call func2 failed");
-        return 0xDEAD;
+        uint[] argv = [ n ];
+        if (!wasm_runtime_call_indirect(exec_env, func1, 1, argv.ptr)) {
+            writeln("call func1 failed");
+            return 0xDEAD;
+        }
+
+        uint n1 = argv[0];
+        writefln("call func1 and return n1=%d", n1);
+
+        if (!wasm_runtime_call_indirect(exec_env, func2, 1, argv.ptr)) {
+            writeln("call func2 failed");
+            return 0xDEAD;
+        }
+
+        uint n2 = argv[0];
+        writefln("call func2 and return n2=%d", n2);
+        return n1 + n2;
     }
+}
 
-    uint n2 = argv[0];
-    writefln("call func2 and return n2=%d", n2);
-    return n1 + n2;
+enum ext {
+    wasm = ".wasm",
+    dll = ".so",
 }
-}
+
+extern(C) void fun() {};
 
 int main(string[] args) {
     import tagion.tvm.TVM;
-//    auto net_opts = getopt(args, std.getopt.config.passThrough, "net-mode", &(local_options.net_mode));
-//    import src.native_impl;
     import std.stdio;
     import std.file : fread=read, exists;
-    const testapp_file=args[1];
-    immutable wasm_code = cast(immutable(ubyte[]))testapp_file.fread;
-    WamrSymbols wasm_symbols;
-    //wasm_symbols("intToStr", &intToStr, "(i*~i)i");
-    wasm_symbols.declare!intToStr; //calculate_native(); //("calculate_native", &calculate_native, "");
-    wasm_symbols.declare!get_pow;
-    wasm_symbols.declare!calculate_native; //("calculate_native", &calculate_native, "");
 
-    // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!calculate_native());
-    // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!get_pow());
-    // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!intToStr());
-    uint[] global_heap;
-    global_heap.length=512 * 1024;
+    immutable wasm_file = args
+        .filter!((a) => (a.extension == ext.wasm))
+        .doFront;
+    immutable dll_file = args
+        .filter!((a) => (a.extension == ext.dll))
+        .doFront;
 
-    auto wasm_engine=new TVMEngine(
-        wasm_symbols,
-        8092, // Stack size
-        8092, // Heap size
-        global_heap, // Global heap
-        wasm_code,
-        "env");
+    if (dll_file) {
+        writefln("dll_file=%s", dll_file);
+        void* hndl = dlopen(dll_file.ptr, RTLD_LAZY);
+        if (!hndl) assert(0);
+        pragma(msg, typeof(&fun));
+        auto p = cast(typeof(&fun))dlsym(hndl, fun.mangleof.ptr);
+        pragma(msg, typeof(p));
+        printf("p=%p\n", p);
+        // void function() f_p;
+        p();
+//        f_p=p;
 
-    //
-    // Calling Wasm functions from D
-    //
-    float ret_val;
-
-    {
-        import std.conv : to;
-        auto generate_float=wasm_engine.lookup("generate_float");
-        ret_val=wasm_engine.call!float(generate_float, 10, 0.000101, 300.002f);
-        assert(ret_val.to!string == "102010");
     }
+    if (wasm_file) {
+//    const testapp_file=args[1];
+        immutable wasm_code = cast(immutable(ubyte[]))wasm_file.fread;
+        WamrSymbols wasm_symbols;
+        //wasm_symbols("intToStr", &intToStr, "(i*~i)i");
+        wasm_symbols.declare!intToStr; //calculate_native(); //("calculate_native", &calculate_native, "");
+        wasm_symbols.declare!get_pow;
+        wasm_symbols.declare!calculate_native; //("calculate_native", &calculate_native, "");
 
-    {
-        auto float_to_string=wasm_engine.lookup("float_to_string");
-        char* native_buffer;
-        auto wasm_buffer=wasm_engine.malloc(100, native_buffer);
-        scope(exit) {
-            wasm_engine.free(wasm_buffer);
+        // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!calculate_native());
+        // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!get_pow());
+        // writefln("paramSymbols =%s", WamrSymbols.paramSymbols!intToStr());
+        uint[] global_heap;
+        global_heap.length=512 * 1024;
+
+        auto wasm_engine=new TVMEngine(
+            wasm_symbols,
+            8092, // Stack size
+            8092, // Heap size
+            global_heap, // Global heap
+            wasm_code,
+            "env");
+
+        //
+        // Calling Wasm functions from D
+        //
+        float ret_val;
+
+        {
+            import std.conv : to;
+            auto generate_float=wasm_engine.lookup("generate_float");
+            ret_val=wasm_engine.call!float(generate_float, 10, 0.000101, 300.002f);
+            assert(ret_val.to!string == "102010");
         }
-        wasm_engine.call!void(float_to_string, ret_val, wasm_buffer, 100, 3);
-        assert(fromStringz(native_buffer) == "102009.921");
-    }
 
-    {
-        auto calculate=wasm_engine.lookup("calculate");
-        auto ret=wasm_engine.call!int(calculate, 3);
-        assert(ret == 120);
-    }
+        {
+            auto float_to_string=wasm_engine.lookup("float_to_string");
+            char* native_buffer;
+            auto wasm_buffer=wasm_engine.malloc(100, native_buffer);
+            scope(exit) {
+                wasm_engine.free(wasm_buffer);
+            }
+            wasm_engine.call!void(float_to_string, ret_val, wasm_buffer, 100, 3);
+            assert(fromStringz(native_buffer) == "102009.921");
+        }
 
+        {
+            auto calculate=wasm_engine.lookup("calculate");
+            auto ret=wasm_engine.call!int(calculate, 3);
+            assert(ret == 120);
+        }
+    }
     writeln("Passed");
 
     return 0;
