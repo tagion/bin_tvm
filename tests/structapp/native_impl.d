@@ -112,20 +112,66 @@ extern(C) {
                 //
         // Calling Wasm functions from D
         //
+        S s;
+        s.x=42;
+        s.c='A';
+        s.y=-42_000_000_000_000_000L;
+        s.f=42.42;
+        s.d=-42.42;
 
         {
-            import std.conv : to;
-            auto test=wasm_engine.lookup("test");
-            S s;
-            s.x=42;
-            s.c='A';
+            // import std.conv : to;
+            auto get_x=wasm_engine.lookup("get_x");
             writefln("s=%s", s);
-            const ret_val=wasm_engine.call!int(test, s);
+            const ret_val=wasm_engine.call!int(get_x, s);
             writefln("ret_val=%s", ret_val);
+            assert(ret_val == s.x);
 //            assert(ret_val.to!string == "102010");
         }
 
-        version(none)
+        {
+            // import std.conv : to;
+            auto get_y=wasm_engine.lookup("get_y");
+            writefln("s=%s", s);
+            const ret_val=wasm_engine.call!long(get_y, s);
+            writefln("ret_val=%s", ret_val);
+            assert(ret_val == s.y);
+//            assert(ret_val.to!string == "102010");
+        }
+
+
+        {
+            // import std.conv : to;
+            auto get_c=wasm_engine.lookup("get_c");
+            writefln("s=%s", s);
+            const ret_val=wasm_engine.call!char(get_c, s);
+            writefln("ret_val=%s", ret_val);
+            assert(ret_val == s.c);
+
+//            assert(ret_val.to!string == "102010");
+        }
+
+        {
+            // import std.conv : to;
+            auto get_f=wasm_engine.lookup("get_f");
+            writefln("s=%s", s);
+            const ret_val=wasm_engine.call!float(get_f, s);
+            writefln("ret_val=%s", ret_val);
+//            assert(ret_val.to!string == "102010");
+            assert(ret_val == s.f);
+        }
+
+        {
+            // import std.conv : to;
+            auto get_d=wasm_engine.lookup("get_d");
+            writefln("s=%s", s);
+            const ret_val=wasm_engine.call!double(get_d, s);
+            writefln("ret_val=%s", ret_val);
+//            assert(ret_val.to!string == "102010");
+            assert(ret_val == s.d);
+        }
+
+version(none)
         {
             auto float_to_string=wasm_engine.lookup("float_to_string");
             char* native_buffer;

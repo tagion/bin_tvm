@@ -9,8 +9,12 @@ BIN:=bin
 MAIN:=structapp
 DFILES:=$(MAIN).d
 
-LDWFLAGS+=--export=test
 LDWFLAGS+=--export=test_ptr
+LDWFLAGS+=--export=get_x
+LDWFLAGS+=--export=get_y
+LDWFLAGS+=--export=get_c
+LDWFLAGS+=--export=get_f
+LDWFLAGS+=--export=get_d
 LDWFLAGS+=--export=set_x
 LDWFLAGS+=--export=set_y
 LDWFLAGS+=--export=set_c

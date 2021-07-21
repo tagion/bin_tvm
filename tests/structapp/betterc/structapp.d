@@ -18,8 +18,24 @@ struct S {
 
 }
 
-int test(S s) {
+int get_x(S s) {
     return s.x;
+}
+
+char get_c(S s) {
+    return s.c;
+}
+
+long get_y(S s) {
+    return s.y;
+}
+
+float get_f(S s) {
+    return s.f;
+}
+
+double get_d(S s) {
+    return s.d;
 }
 
 int test_ptr(S* s) {
