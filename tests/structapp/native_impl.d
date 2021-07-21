@@ -118,7 +118,8 @@ extern(C) {
             auto test=wasm_engine.lookup("test");
             S s;
             s.x=42;
-
+            s.c='A';
+            writefln("s=%s", s);
             const ret_val=wasm_engine.call!int(test, s);
             writefln("ret_val=%s", ret_val);
 //            assert(ret_val.to!string == "102010");
