@@ -42,8 +42,9 @@ int test_ptr(S* s) {
     return s.x;
 }
 
-void set_x(S* s, int x) {
+int set_x(S* s, int x) {
     s.x = x;
+    return s.x;
 }
 
 void set_y(S* s, long y) {

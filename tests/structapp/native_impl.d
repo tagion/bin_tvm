@@ -171,6 +171,15 @@ extern(C) {
             assert(ret_val == s.d);
         }
 
+        {
+            auto set_x=wasm_engine.lookup("set_x");
+            S* s_p;
+            writefln("s=%s", S.stringof);
+            const ret_val=wasm_engine.call!int(set_x, s_p, 17);
+            writefln("ret_val=%s", s_p);
+            writefln("ret_val=%s", ret_val);
+
+        }
 version(none)
         {
             auto float_to_string=wasm_engine.lookup("float_to_string");
