@@ -47,20 +47,24 @@ int set_x(S* s, int x) {
     return s.x;
 }
 
-void set_y(S* s, long y) {
+long set_y(S* s, long y) {
     s.y = y;
+    return s.y;
 }
 
-void set_c(S* s, char c) {
+char set_c(S* s, char c) {
     s.c = c;
+    return s.c;
 }
 
-void set_f(S* s, float f) {
+float set_f(S* s, float f) {
     s.f = f;
+    return s.f;
 }
 
-void set_d(S* s, double d) {
+double set_d(S* s, double d) {
     s.d = d;
+    return s.d;
 }
 
 void _start() {}

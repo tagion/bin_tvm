@@ -122,9 +122,9 @@ extern(C) {
         {
             // import std.conv : to;
             auto get_x=wasm_engine.lookup("get_x");
-            writefln("s=%s", s);
+//            writefln("s=%s", s);
             const ret_val=wasm_engine.call!int(get_x, s);
-            writefln("ret_val=%s", ret_val);
+//            writefln("ret_val=%s", ret_val);
             assert(ret_val == s.x);
 //            assert(ret_val.to!string == "102010");
         }
@@ -132,9 +132,9 @@ extern(C) {
         {
             // import std.conv : to;
             auto get_y=wasm_engine.lookup("get_y");
-            writefln("s=%s", s);
+//            writefln("s=%s", s);
             const ret_val=wasm_engine.call!long(get_y, s);
-            writefln("ret_val=%s", ret_val);
+//            writefln("ret_val=%s", ret_val);
             assert(ret_val == s.y);
 //            assert(ret_val.to!string == "102010");
         }
@@ -143,9 +143,9 @@ extern(C) {
         {
             // import std.conv : to;
             auto get_c=wasm_engine.lookup("get_c");
-            writefln("s=%s", s);
+//            writefln("s=%s", s);
             const ret_val=wasm_engine.call!char(get_c, s);
-            writefln("ret_val=%s", ret_val);
+//            writefln("ret_val=%s", ret_val);
             assert(ret_val == s.c);
 
 //            assert(ret_val.to!string == "102010");
@@ -154,9 +154,9 @@ extern(C) {
         {
             // import std.conv : to;
             auto get_f=wasm_engine.lookup("get_f");
-            writefln("s=%s", s);
+//            writefln("s=%s", s);
             const ret_val=wasm_engine.call!float(get_f, s);
-            writefln("ret_val=%s", ret_val);
+//            writefln("ret_val=%s", ret_val);
 //            assert(ret_val.to!string == "102010");
             assert(ret_val == s.f);
         }
@@ -164,23 +164,81 @@ extern(C) {
         {
             // import std.conv : to;
             auto get_d=wasm_engine.lookup("get_d");
-            writefln("s=%s", s);
+//            writefln("s=%s", s);
             const ret_val=wasm_engine.call!double(get_d, s);
-            writefln("ret_val=%s", ret_val);
+//            writefln("ret_val=%s", ret_val);
 //            assert(ret_val.to!string == "102010");
             assert(ret_val == s.d);
         }
 
         {
             auto set_x=wasm_engine.lookup("set_x");
-            S* s_p;
-            writefln("s=%s", S.stringof);
+            auto s_p = wasm_engine.alloc!(S*);
+            scope(exit) {
+                wasm_engine.free(s_p);
+            }
             const ret_val=wasm_engine.call!int(set_x, s_p, 17);
-            writefln("ret_val=%s", s_p);
-            writefln("ret_val=%s", ret_val);
-
+            assert(ret_val == 17);
+            assert(ret_val == s_p.x);
         }
-version(none)
+
+        {
+            auto set_y=wasm_engine.lookup("set_y");
+            auto s_p = wasm_engine.alloc!(S*);
+            scope(exit) {
+                wasm_engine.free(s_p);
+            }
+            const test_val = -42_420_420L;
+            const ret_val=wasm_engine.call!long(set_y, s_p, test_val);
+            // writefln("ret_val %d", ret_val);
+
+            assert(ret_val == test_val);
+            assert(ret_val == s_p.y);
+        }
+
+        {
+            auto set_c=wasm_engine.lookup("set_c");
+            auto s_p = wasm_engine.alloc!(S*);
+            scope(exit) {
+                wasm_engine.free(s_p);
+            }
+            const test_val = 'C';
+            const ret_val=wasm_engine.call!char(set_c, s_p, test_val);
+            // writefln("ret_val %d", ret_val);
+
+            assert(ret_val == test_val);
+            assert(ret_val == s_p.c);
+        }
+
+        {
+            auto set_f=wasm_engine.lookup("set_f");
+            auto s_p = wasm_engine.alloc!(S*);
+            scope(exit) {
+                wasm_engine.free(s_p);
+            }
+            const test_val = float(3.1415);
+            const ret_val=wasm_engine.call!float(set_f, s_p, test_val);
+            // writefln("ret_val %d", ret_val);
+
+            assert(ret_val == test_val);
+            assert(ret_val == s_p.f);
+        }
+
+        {
+            auto set_d=wasm_engine.lookup("set_d");
+            auto s_p = wasm_engine.alloc!(S*);
+            scope(exit) {
+                wasm_engine.free(s_p);
+            }
+            const test_val = double(3.1415e-200);
+            const ret_val=wasm_engine.call!double(set_d, s_p, test_val);
+            // writefln("ret_val %d", ret_val);
+
+            assert(ret_val == test_val);
+            assert(ret_val == s_p.d);
+        }
+
+        version(none)
         {
             auto float_to_string=wasm_engine.lookup("float_to_string");
             char* native_buffer;
