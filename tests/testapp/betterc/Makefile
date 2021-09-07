@@ -10,6 +10,7 @@ WASM_MOD:=${WOBJS:.wo=.wasm}
 
 WASMFLAGS+=-mtriple=wasm32-unknown-unknown-was
 WASMFLAGS+=--betterC
+WASMFLAGS+=-O
 #LDWFLAGS+=-z stack-size=4096
 #LDWFLAGS+=--initial-memory=65536
 #LDWFLAGS+=--sysroot=${WAMR_DIR}/wamr-sdk/app/libc-builtin-sysroot
@@ -19,6 +20,7 @@ LDWFLAGS+=--export=generate_float
 LDWFLAGS+=--export=float_to_string
 LDWFLAGS+=--export=calculate
 LDWFLAGS+=--allow-undefined
+#LDWFLAGS+=-O
 
 
 SRC?=src
