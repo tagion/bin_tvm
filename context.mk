@@ -1,2 +1,2 @@
-tvmutil.ctx: libtagioncrypto.o libtagiontvm.o libtagionfoundation.o
+tagiontvmutil.ctx: libtagioncrypto.o libtagiontvm.o libtagionfoundation.o
 	@
